@@ -352,8 +352,8 @@ export class AbstractBufferSet {
 					const b = e - a * 67108864;
 					const as = vertexOffset + a * 3;
 					const bs = vertexOffset + b * 3;
-					let A = gpu_data.subarray(as, as + 3);
-					let B = gpu_data.subarray(bs, bs + 3);
+					A = gpu_data.subarray(as, as + 3);
+					B = gpu_data.subarray(bs, bs + 3);
 				}
 				lineRenderer.pushVertices(A, B);
 			}
