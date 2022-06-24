@@ -176,6 +176,7 @@ export class GLTFLoader {
             let aabb = Utils.emptyAabb();
 
             let batchedPrimitive = mesh.primitives.length == 1;
+            let anyTransparent = false;
 
             mesh.primitives.forEach((primitive, j) => {
                 let [psAccessor, ps] = this.getBufferData(primitive, 'POSITION');
@@ -208,6 +209,10 @@ export class GLTFLoader {
                     ? material.pbrMetallicRoughness.baseColorFactor
                     : [0.6, 0.6, 0.6, 1.0];
 
+                if (color[3] < 1.0) {
+                    anyTransparent = true;
+                }
+
                 let cs = new Float32Array(ps.length / 3 * 4);
                 for (var k = 0; k < cs.length; k += 4) {
                     cs.set(color, k);
@@ -233,6 +238,7 @@ export class GLTFLoader {
             }
 
             for (var k = 0; k < aabb.length; ++k) {
+                // @nb hardcoded assumption that glTF is in meters
                 aabb[k] *= 1000.;
             }
 
@@ -255,7 +261,7 @@ export class GLTFLoader {
                     null,
                     indices,
                     null,
-                    false,
+                    anyTransparent,
                     false,
                     0
                 );
@@ -419,7 +425,13 @@ export class GLTFLoader {
                 } else {
                     let uniqueId = this.renderLayer.viewer.oidCounter ++;
 
+                    for (var i = 0; i < 6; ++i) {
+                        aabb[i] *= 0.001;
+                    }
                     let aabb_global = this.transformAabb(aabb, m4);
+                    for (var i = 0; i < 6; ++i) {
+                        aabb_global[i] *= 1000.;
+                    }
 
                     this.renderLayer.createObject(1, null, uniqueId, [n.mesh], m4, m3, m3, false, null, aabb, this.params.geospatial);
                     let globalizedAabb;
@@ -429,9 +441,12 @@ export class GLTFLoader {
                         globalizedAabb = aabb_global;
                     }
 
+                    let featureData = n.name ? {'name': n.name} : null;
+
                     let viewObject = {
                         renderLayer: this.renderLayer,
                         type: "glTF Object",
+                        data: featureData,
                         aabb: aabb_global,
                         globalizedAabb: globalizedAabb,
                         uniqueId: uniqueId
