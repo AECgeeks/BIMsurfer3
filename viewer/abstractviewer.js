@@ -71,18 +71,30 @@ export class AbstractViewer {
 			}
 		}
 	}
+	
+    setSelection(args) {
+        this.viewer.setSelectionState(args.ids, args.selected, args.clear, false);
+    }
 
 	loadGltf(params) {
 		let load = (buffer) => {
+			if (!this.viewer.globalTranslationVector) {
+				this.viewer.globalTranslationVector = vec3.create();
+			}
 			var gltfLoader = new GLTFLoader(this.viewer, buffer, params);
 			gltfLoader.processGLTFBuffer();
+			this.viewer.updateModelBounds();
 		};
 		if (params.url) {
-			fetch(params.url).then(function (response) {
-				return response.arrayBuffer();
-			}).then(load);
+			return this.init().then(() => {
+				fetch(params.url).then(function (response) {
+					return response.arrayBuffer();
+				}).then(load);
+			});
 		} else if (params.buffer) {
-			load(params.buffer);
+			return this.init().then(() => {
+				return load(params.buffer);
+			});
 		} else {
 			throw new Error("Expected buffer or url");
 		}
