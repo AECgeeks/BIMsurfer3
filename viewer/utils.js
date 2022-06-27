@@ -182,6 +182,11 @@ export class Utils {
 		return r;
 	}
 
+	static unionAabbInPlace(a, b) {
+		this.growAabb(a, b.subarray(0, 3));
+		this.growAabb(a, b.subarray(3, 6));
+	}
+
 	static growAabb(aabb, pnt) {
 		for (let i = 0; i < 6; ++i) {
 			let fn = i < 3 ? Math.min : Math.max;

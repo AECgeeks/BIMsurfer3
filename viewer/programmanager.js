@@ -75,7 +75,7 @@ export class ProgramManager {
 				],
 			uniforms: [
 				"projectionMatrix",
-				"viewNormalMatrix",
+				// "viewNormalMatrix",
 				"postProcessingTranslation",
 				"viewMatrix",
 				"sectionPlane"

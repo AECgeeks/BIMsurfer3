@@ -126,32 +126,35 @@ export class RenderLayer {
 		return object;
 	}
 
-	addGeometry(loaderId, geometry, object, buffer, sizes, quantFromAabb) {
+	addGeometry(loaderId, geometry, object, buffer, sizes, quantizationHint) {
 		var loaderQuantizeNormals = this.settings.loaderSettings.quantizeNormals;
 		var quantizeNormals = this.settings.quantizeNormals;
 
 		var startIndex = buffer.positionsIndex / 3;
 
-		let QM = this.viewer.vertexQuantization.vertexQuantizationMatrix;
-		let IQM = this.viewer.vertexQuantization.inverseVertexQuantizationMatrixWithGlobalTranslation;
+		let QM = this.viewer.vertexQuantization ? this.viewer.vertexQuantization.vertexQuantizationMatrix : null;
+		let IQM = this.viewer.vertexQuantization ? this.viewer.vertexQuantization.inverseVertexQuantizationMatrixWithGlobalTranslation : null;
 
-		if (quantFromAabb) {
+		if (quantizationHint || !this.viewer.vertexQuantization) {
+			let numQuantizationHint = typeof quantizationHint === 'number' ? quantizationHint : 0.01;
 			// @todo not really from AABB (because we want to limit the amount of quantization matrices),
 			// but maybe come up with something more robust than this.
 			let QM2 = mat4.create();
-			QM2[ 0] = 0.01;
-			QM2[ 5] = 0.01;
-			QM2[10] = 0.01;
-			QM2[12] = 0.01 * QM[12] / QM[0];
-			QM2[13] = 0.01 * QM[13] / QM[5];
-			QM2[14] = 0.01 * QM[14] / QM[10];
+			QM2[ 0] = numQuantizationHint;
+			QM2[ 5] = numQuantizationHint;
+			QM2[10] = numQuantizationHint;
+			if (QM) {
+				QM2[12] = 0.01 * QM[12] / QM[0];
+				QM2[13] = 0.01 * QM[13] / QM[5];
+				QM2[14] = 0.01 * QM[14] / QM[10];
+			}
 			QM2[15] = 1.0;
 			QM = QM2;
 
 			IQM = mat4.identity(mat4.create());
-			IQM[0] *= 100.;
-			IQM[5] *= 100.;
-			IQM[10] *= 100.;
+			IQM[ 0] *= 1. / numQuantizationHint;
+			IQM[ 5] *= 1. / numQuantizationHint;
+			IQM[10] *= 1. / numQuantizationHint;
 		}
 
 		buffer.unquantizationMatrix = IQM;

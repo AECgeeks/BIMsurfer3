@@ -57,7 +57,7 @@ export class Settings {
 				quantizeColors: true,
 				useObjectColors: false,
 				tilingLayerReuse: true,
-				prepareBuffers: false,
+				prepareBuffers: true,
 				useUuidAndRid: false
 			},
 			realtimeSettings: {

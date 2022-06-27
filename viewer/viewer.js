@@ -45,6 +45,8 @@ const OVERRIDE_FLAG = (1 << 30);
 export class Viewer {
 
     constructor(canvas, settings, stats, width, height) {
+        this.initialized = false;
+
         this.width = width;
         this.height = height;
 
@@ -447,36 +449,40 @@ export class Viewer {
 
     init() {
         var promise = new Promise((resolve, reject) => {
-            this._dirty = 2;
-            this.then = 0;
-            if (this.settings.autoRender) {
-            	this.running = true;
-            }
-            this.firstRun = true;
-
-            this.fps = 0;
-            this.timeLast = 0;
-
-            this.canvas.oncontextmenu = function (e) { // Allow right-click for camera panning
-                e.preventDefault();
-            };
-
-            this.cameraControl = new CameraControl(this);
-            this.lighting = new Lighting(this);
-            this.programManager = new ProgramManager(this, this.gl, this.settings);
-
-            this.programManager.load().then(() => {
+            if (this.initialized) {
                 resolve();
-                if (this.running) {
-                	requestAnimationFrame((now) => {
-                        this.render(now);
-                	});
+            } else {
+                this._dirty = 2;
+                this.then = 0;
+                if (this.settings.autoRender) {
+                    this.running = true;
                 }
-            });
+                this.firstRun = true;
 
-            this.pickBuffer = new RenderBuffer(this, this.canvas, this.gl, COLOR_FLOAT_DEPTH_NORMAL);
-            this.oitBuffer = new RenderBuffer(this, this.canvas, this.gl, COLOR_ALPHA_DEPTH);
-            this.quad = new SSQuad(this.gl);
+                this.fps = 0;
+                this.timeLast = 0;
+
+                this.canvas.oncontextmenu = function (e) { // Allow right-click for camera panning
+                    e.preventDefault();
+                };
+
+                this.cameraControl = new CameraControl(this);
+                this.lighting = new Lighting(this);
+                this.programManager = new ProgramManager(this, this.gl, this.settings);                
+
+                this.pickBuffer = new RenderBuffer(this, this.canvas, this.gl, COLOR_FLOAT_DEPTH_NORMAL);
+                this.oitBuffer = new RenderBuffer(this, this.canvas, this.gl, COLOR_ALPHA_DEPTH);
+                this.quad = new SSQuad(this.gl);
+
+                this.programManager.load().then(() => {
+                    resolve();
+                    if (this.running) {
+                        requestAnimationFrame((now) => {
+                            this.render(now);
+                        });
+                    }
+                });
+            }
         });
         return promise;
     }
@@ -490,7 +496,6 @@ export class Viewer {
         this.camera.forceBuild();
         this.updateViewport();
 		this.overlay.resize();
-		this.render();
     }
 
     render(now) {
@@ -555,7 +560,7 @@ export class Viewer {
 //        	this.gl.disable(this.gl.POLYGON_OFFSET_FILL);
         	
         	if (this.settings.realtimeSettings.drawLineRenders) {
-            	this.gl.depthFunc(this.gl.LESS);
+            	this.gl.depthFunc(this.gl.LEQUAL);
                 for (var twoSidedTriangles of [false, true]) {
 	            	for (var renderLayer of this.renderLayers) {
 	            		renderLayer.render(transparency, true, twoSidedTriangles, elems);
@@ -708,6 +713,10 @@ export class Viewer {
         gl.disable(gl.CULL_FACE);
 
         if (this.selectedElements.size > 0) {
+            /*
+            // There's something wrong with the stencil operation here,
+            // let's just disable it and draw a single thin wireframe.
+            
             gl.enable(gl.STENCIL_TEST);
             gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE);
             gl.stencilFunc(gl.ALWAYS, 1, 0xff);
@@ -715,18 +724,19 @@ export class Viewer {
             gl.depthMask(false);
             gl.disable(gl.DEPTH_TEST);
             gl.colorMask(false, false, false, false);
-            
+
             this.internalRender({with: this.selectedElements, pass: 'stencil'});
 
             gl.stencilFunc(gl.NOTEQUAL, 1, 0xff);
             gl.stencilMask(0x00);
             gl.colorMask(true, true, true, true);
-
+            
             for (var renderLayer of this.renderLayers) {
                 renderLayer.renderSelectionOutlines(this.selectedElements);
             }
 
             gl.disable(gl.STENCIL_TEST);
+            */
 
             for (var renderLayer of this.renderLayers) {
                 renderLayer.renderSelectionOutlines(this.selectedElements, 0.002);
@@ -994,6 +1004,16 @@ export class Viewer {
     	}
     	var pickId = viewObject.pickId;
     	return this.getPickColorForPickId(pickId);
+    }
+
+    updateModelBounds() {
+        let aabb = Utils.emptyAabb();
+        this.viewObjects.forEach(vob => {
+            Utils.unionAabbInPlace(aabb, vob.globalizedAabb);
+        });
+        this.modelBounds = aabb;
+        this.camera.setModelBounds(this.modelBounds);
+        this.updateViewport();
     }
 
     setModelBounds(modelBounds, force=false) {

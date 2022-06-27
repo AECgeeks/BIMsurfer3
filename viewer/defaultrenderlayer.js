@@ -137,7 +137,7 @@ export class DefaultRenderLayer extends RenderLayer {
 
 			if (!picking && !lines) {
 				this.viewer.lighting.render(programInfo.uniformBlocks.LightData);
-				this.gl.uniformMatrix3fv(programInfo.uniformLocations.viewNormalMatrix, false, this.viewer.camera.viewNormalMatrix);
+				// this.gl.uniformMatrix3fv(programInfo.uniformLocations.viewNormalMatrix, false, this.viewer.camera.viewNormalMatrix);
 			}
 
 			this.gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, this.viewer.camera.projMatrix);

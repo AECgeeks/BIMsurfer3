@@ -88,7 +88,7 @@ uniform float aspect;
 uniform float thickness;
 #else
 #ifndef WITH_LINES
-uniform mat3 viewNormalMatrix;
+// uniform mat3 viewNormalMatrix;
 #endif
 #endif
 
@@ -226,13 +226,8 @@ void main(void) {
 	// Line rendering color
 	color = vec4(0.3, 0.3, 0.3, 1);
 #else
-    vec3 viewNormal = normalize(viewNormalMatrix * floatNormal);
-    // This does not seem to work, I think the "abs" results in the model being dark on 2 sides, and being light on the other 2 sides
-//    float lambert1 = abs(dot(floatNormal, normalize(lightData.dir)));
-    float lambert2 = abs(max(dot(-viewNormal, normalize(lightData.dir)), 0.0));
-//    color = vec4((lambert1 * 0.85 + lambert2 * 0.2 + 0.3) * floatColor.rgb, floatColor.a);
-    color = vec4((lambert2 * 0.7 + 0.3) * floatColor.rgb, floatColor.a);
-//    color = floatColor;
+    float lambert = abs(dot(floatNormal, normalize(lightData.dir)));
+    color = vec4((lambert * 0.7 +  0.4) * floatColor.rgb, floatColor.a);
 #endif
 #endif
 

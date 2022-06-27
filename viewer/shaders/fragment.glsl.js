@@ -81,8 +81,8 @@ void main(void) {
 //   mist = pow(mist, 0.5);
 
 //   myOutputColor = vec4(color.rgb, color.a * mist);
-   myOutputColor = color;
-   myOutputAlpha = 1.;
+   myOutputColor = vec4(color.rgb * pow(color.a, 1.5), color.a);
+   myOutputAlpha = color.a;
 #endif
 }
 `

@@ -39,7 +39,7 @@ export class SSQuad {
             float a = texture(alphaAccumulate, uv).r;
             vec4 accum = texture(colorAccumulate, uv);
             // pssst I'm just doing random stuff here
-            fragColor = vec4(pow(accum.rgb / a, vec3(0.75, 0.75, 0.75)), clamp(accum.a, 0., 1.));
+            fragColor = vec4(accum.rgb / accum.a, a);
         }`;
 
         let vs = gl.createShader(gl.VERTEX_SHADER);
