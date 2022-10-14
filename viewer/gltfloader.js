@@ -277,6 +277,11 @@ export class GLTFLoader {
             });
         });
 
+        // In case of deferred loading, we first gather all objects
+        // in an array to calculate the overall bounding box for
+        // quantization hint
+        let objects = [];
+
         this.json.nodes.forEach((n, i) => {
             if (typeof(n.mesh) !== 'undefined') {
                 const aabb = aabbs[n.mesh];
@@ -433,7 +438,10 @@ export class GLTFLoader {
                         aabb_global[i] *= 1000.;
                     }
 
-                    this.renderLayer.createObject(1, null, uniqueId, [n.mesh], m4, m3, m3, false, null, aabb, this.params.geospatial);
+                    if (!this.params.defer) {
+                        this.renderLayer.createObject(1, null, uniqueId, [n.mesh], m4, m3, m3, false, null, aabb, this.params.geospatial);
+                    }
+
                     let globalizedAabb;
                     if (this.renderLayer.viewer.globalTranslationVector) {
                         globalizedAabb = Utils.transformBounds(aabb_global, this.renderLayer.viewer.globalTranslationVector);
@@ -451,10 +459,41 @@ export class GLTFLoader {
                         globalizedAabb: globalizedAabb,
                         uniqueId: uniqueId
                     };
-                    this.viewer.addViewObject(uniqueId, viewObject);
+
+                    if (this.params.defer) {
+                        objects.push([n.mesh, m4, m3, aabb_global, viewObject])
+                    } else {
+                        this.viewer.addViewObject(uniqueId, viewObject);
+                    }
                 }
             }
         });
+
+        if (this.params.defer) {
+            // renderlayer.js checks for 16000 as the max vertex extent after which the
+            // value is marked out of bounds and erased.
+            
+            // Create union of translated object aabbs
+            let modelAabb = Utils.emptyAabb();
+            for (let [mesh, m4, m3, aabb, viewObject] of objects) {
+                Utils.unionAabbInPlace(modelAabb, aabb);
+            }
+
+            // Negate lower bound
+            vec3.negate(modelAabb.subarray(0,3), modelAabb.subarray(0,3));
+
+            // Create a triple of quantization hints, with some safety factor
+            // as 15990 < 16000
+            for (let i = 0; i < 3; ++i) {
+                modelAabb[i] = 15990. / Math.max(modelAabb[i], modelAabb[i+3]);
+            }
+
+            // Now finally create the objects with quantization hints per model.
+            for (let [mesh, m4, m3, aabb, viewObject] of objects) {
+                this.renderLayer.createObject(1, null, viewObject.uniqueId, [mesh], m4, m3, m3, false, null, aabb, modelAabb.subarray(0, 3));
+                this.viewer.addViewObject(viewObject.uniqueId, viewObject);
+            }
+        }
 
         this.renderLayer.flushAllBuffers();
     }
