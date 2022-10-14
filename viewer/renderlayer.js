@@ -136,25 +136,34 @@ export class RenderLayer {
 		let IQM = this.viewer.vertexQuantization ? this.viewer.vertexQuantization.inverseVertexQuantizationMatrixWithGlobalTranslation : null;
 
 		if (quantizationHint || !this.viewer.vertexQuantization) {
-			let numQuantizationHint = typeof quantizationHint === 'number' ? quantizationHint : 0.01;
-			// @todo not really from AABB (because we want to limit the amount of quantization matrices),
+			// @todo in case of 3d tiles data, not really from AABB (because we want to limit the amount of quantization matrices),
 			// but maybe come up with something more robust than this.
+			
+			let hintX, hintY, hintZ;
+			if (typeof quantizationHint === 'number') {
+				hintX = hintY = hintZ = quantizationHint
+			} else if (quantizationHint instanceof Float32Array) {
+				[hintX, hintY, hintZ] = quantizationHint;
+			} else {
+				hintX = hintY = hintZ = 0.01;
+			}
+
 			let QM2 = mat4.create();
-			QM2[ 0] = numQuantizationHint;
-			QM2[ 5] = numQuantizationHint;
-			QM2[10] = numQuantizationHint;
+			QM2[ 0] = hintX;
+			QM2[ 5] = hintY;
+			QM2[10] = hintZ;
 			if (QM) {
-				QM2[12] = 0.01 * QM[12] / QM[0];
-				QM2[13] = 0.01 * QM[13] / QM[5];
-				QM2[14] = 0.01 * QM[14] / QM[10];
+				QM2[12] = hintX * QM[12] / QM[0];
+				QM2[13] = hintY * QM[13] / QM[5];
+				QM2[14] = hintZ * QM[14] / QM[10];
 			}
 			QM2[15] = 1.0;
 			QM = QM2;
 
 			IQM = mat4.identity(mat4.create());
-			IQM[ 0] *= 1. / numQuantizationHint;
-			IQM[ 5] *= 1. / numQuantizationHint;
-			IQM[10] *= 1. / numQuantizationHint;
+			IQM[ 0] *= 1. / hintX;
+			IQM[ 5] *= 1. / hintY;
+			IQM[10] *= 1. / hintZ;
 		}
 
 		buffer.unquantizationMatrix = IQM;
