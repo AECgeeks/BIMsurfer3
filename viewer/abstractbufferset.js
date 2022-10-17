@@ -817,14 +817,8 @@ export class AbstractBufferSet {
 			// Assumes there is just one index pair, this is for now always the case.
 			oldColors = new window[this.colorBuffer.js_type](length);
 
-			if (clr.length == 4) {
-				newColors = new window[this.colorBuffer.js_type](length);
-				for (let i = 0; i < length; i += 4) {
-					newColors.set(clrArray, i);
-				}
-			}
-
-    		var restoreArrayBinding = gl.getParameter(gl.ARRAY_BUFFER_BINDING);
+			// Read first to allow overriding only some of the colour components
+			var restoreArrayBinding = gl.getParameter(gl.ARRAY_BUFFER_BINDING);
     		gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer);
     		let bounds = this.batchGpuBuffers.bounds;
 			let gpu_data = this.batchGpuBuffers.colorBuffer;
@@ -832,6 +826,27 @@ export class AbstractBufferSet {
 			for (let j=0; j<length; j++) {
 				oldColors[j] = gpu_data[offset - (bounds.minIndex * 4) + j];
     		}
+
+			if (clr.length == 4) {
+				newColors = new window[this.colorBuffer.js_type](length);
+				// Test if there are NaNs in the array
+				if (Array.from(clr).some(x => x != x)) {
+					// Allow for the option to only override some of the colour components
+					newColors.set(oldColors);
+					for (let j = 0; j < 4; ++j) {
+						if (clr[j] == clr[j]) {
+							for (let i = j; i < length; i += 4) {
+								newColors[i] = clrArray[j];
+							}
+						}
+					}
+				} else {
+					for (let i = 0; i < length; i += 4) {
+						newColors.set(clrArray, i);
+					}
+				}
+			}
+    		
     		gl.bufferSubData(gl.ARRAY_BUFFER, offset * bytes_per_elem, newColors, 0, length);
     		gl.bindBuffer(gl.ARRAY_BUFFER, restoreArrayBinding);
 		}
