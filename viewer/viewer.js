@@ -126,6 +126,14 @@ export class Viewer {
         	let inverse = this.uniqueIdCompareFunction(b, a);
         	return inverse < 0 ? -1 : (inverse > 0 ? 1 : 0);
         };
+
+        // Function applied to viewObject to populate viewObjectsByName mapping.
+        this.nameFunction = (vo) => {
+            if (vo && vo.data && vo.data.name) {
+                return vo.data.name;
+            }
+            return null;
+        };
         
         this.uniqueIdToBufferSet = new AvlTree(this.inverseUniqueIdCompareFunction);
 
@@ -134,6 +142,9 @@ export class Viewer {
 
         // String -> ViewObject[]
         this.viewObjectsByType = new Map();
+
+        // String -> ViewObject
+        this.viewObjectsByName = new Map();
 
         // Null means everything visible, otherwise Set(..., ..., ...)
         this.invisibleElements = new FreezableSet(this.uniqueIdCompareFunction);
@@ -1067,6 +1078,8 @@ export class Viewer {
         let byType = this.viewObjectsByType.get(viewObject.type) || [];
         byType.push(viewObject);
         this.viewObjectsByType.set(viewObject.type, byType);
+
+        this.viewObjectsByName.set(this.nameFunction(viewObject), viewObject);
     }
 
 	getAabbFor(ids) {
