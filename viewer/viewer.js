@@ -269,6 +269,17 @@ export class Viewer {
 		return map;
 	}
 
+    convertToInternalIds(elems) {
+        return elems.map(e => {
+            let vo = this.viewObjectsByName.get(e);
+            if (vo) {
+                return vo.uniqueId;
+            } else if (this.viewObjects.has(e)) {
+                return e;
+            }
+        }).filter(x => x);
+    }
+
     setSelectionState(elems, selected, clear, fireEvent=true) {
         return this.selectedElements.batch(() => {
             if (clear) {
@@ -276,7 +287,7 @@ export class Viewer {
             }
 
             let fn = (selected ? this.selectedElements.add : this.selectedElements.delete).bind(this.selectedElements);
-            for (let e of elems) {
+            for (let e of this.convertToInternalIds(elems)) {
                 fn(e);
             }
             
@@ -363,7 +374,7 @@ export class Viewer {
     setColor(elems, clr, fireEvent=true) {
         let aug = this.idAugmentationFunction;
 		let promise = this.invisibleElements.batch(() => {
-			var bufferSetsToUpdate = this.generateBufferSetToOidsMap(elems);
+			var bufferSetsToUpdate = this.generateBufferSetToOidsMap(this.convertToInternalIds(elems));
 			// Reset colors first to clear any potential transparency overrides.
 			return this.resetColorAlreadyBatched(elems, bufferSetsToUpdate).then(() => {
 				for (let [bufferSetId, bufferSetObject] of bufferSetsToUpdate) {
