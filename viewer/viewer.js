@@ -308,8 +308,8 @@ export class Viewer {
 
     resetColor(elems) {
     	return this.invisibleElements.batch(() => {
-			var bufferSetsToUpdate = this.generateBufferSetToOidsMap(elems);
-    		return this.resetColorAlreadyBatched(elems, bufferSetsToUpdate);
+			var bufferSetsToUpdate = this.generateBufferSetToOidsMap(elems || this.viewObjects.keys());
+    		return this.resetColorAlreadyBatched(elems || this.viewObjects.keys(), bufferSetsToUpdate);
 		});
     }
 
