@@ -552,8 +552,17 @@ export class Viewer {
     internalRender(elems, t) {
         for (var transparency of (t || [false, true])) {
 
-//        	this.gl.enable(this.gl.POLYGON_OFFSET_FILL);
-//        	this.gl.polygonOffset(2, 3);
+            if (transparency) {
+                // Apply a polygon offset to transparent polygons.
+                // Because they when rendered: with OIT and no back-face
+                // culling, otherwise there will be with e.g the
+                // back-face of a window frame and the front-face
+                // of the host wall. As the opaque frame is part of a
+                // transparent element it will be rendered in this
+                // pass.
+                this.gl.enable(this.gl.POLYGON_OFFSET_FILL);
+                this.gl.polygonOffset(-0.1, -1);
+            }
 
        		this.gl.disable(this.gl.CULL_FACE);
             
@@ -568,7 +577,9 @@ export class Viewer {
 	            }
             }
 
-//        	this.gl.disable(this.gl.POLYGON_OFFSET_FILL);
+            if (transparency) {
+        	    this.gl.disable(this.gl.POLYGON_OFFSET_FILL);
+            }
         	
         	if (this.settings.realtimeSettings.drawLineRenders) {
             	this.gl.depthFunc(this.gl.LEQUAL);
