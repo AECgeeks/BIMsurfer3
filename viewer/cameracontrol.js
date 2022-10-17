@@ -393,6 +393,10 @@ export class CameraControl {
             this.clickMode = CLICK_SELECT;
         } else if (e.key == "Enter") {
             this.viewer.commitActiveMeasurement();
+        } else if (e.key == "m") {
+            this.clickMode = CLICK_MEASURE_PATH;
+        } else if (e.key == "M") {
+            this.clickMode = CLICK_MEASURE_DIST;
         }
     }
 
