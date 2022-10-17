@@ -76,6 +76,27 @@ export class AbstractViewer {
         this.viewer.setSelectionState(args.ids, args.selected, args.clear, false);
     }
 
+	getSelection() {
+		return this.viewer.getSelected().map(e => e.data.name);
+	}
+
+	setColor(params) {
+		let toArray = (x) => {
+			if (Array.isArray(x)) {
+				if (x.length === 4) {
+					return x;
+				} else if (x.length === 3) {
+					return x.concat(1.);
+				} else {
+					throw new Error('Invalid color type');
+				}
+			} else {
+				return [x.r, x.g, x.b, typeof(x.a) === 'undefined' ? 1. : x.a];
+			}
+		};
+		this.viewer.setColor(params.ids, new Float32Array(toArray(params.color)), false);
+	}
+
 	loadGltf(params) {
 		let load = (buffer) => {
 			if (!this.viewer.globalTranslationVector) {
