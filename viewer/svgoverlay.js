@@ -480,11 +480,12 @@ export class SvgOverlay {
                 e = e.offsetParent;
             }
 
-            var bodyRect = document.body.getBoundingClientRect();
-            return {
-                x: (x - bodyRect.left),
-                y: (y - bodyRect.top)
-            };
+            // @tfk actually caused a discrepancy in positioning
+            // var bodyRect = document.body.getBoundingClientRect();
+            return {x: x, y: y};
+            //     x: (x - bodyRect.left),
+            //     y: (y - bodyRect.top)
+            // };
         }
         
         let svgStyle = this.svg.style;

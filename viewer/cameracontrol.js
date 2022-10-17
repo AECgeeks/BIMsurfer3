@@ -140,19 +140,19 @@ export class CameraControl {
                     return;
                 }
                 if (event.touches.length == 2) {
-                    let coords = Array.from(event.touches).map(t => vec2.fromValues(t.pageX, t.pageY));
+                    let coords = Array.from(event.touches).map(t => vec2.fromValues(t.clientX, t.clientY));
                     this.pinchDistance = vec2.length(vec2.sub(vec2.create(), ...coords));
                     let avg = vec2.add(vec2.create(), ...coords);
                     vec2.scale(avg, avg, 0.5);
                     pageX = avg[0];
                     pageY = avg[1];
                 } else {
-                    pageX = event.touches[0].pageX;
-                    pageY = event.touches[0].pageY;
+                    pageX = event.touches[0].clientX;
+                    pageY = event.touches[0].clientY;
                 }
             } else {
-                pageX = event.pageX;
-                pageY = event.pageY;
+                pageX = event.clientX;
+                pageY = event.clientY;
             }
             const rect = event.target.getBoundingClientRect();
             const totalOffsetLeft = rect.left;
