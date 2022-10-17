@@ -63,6 +63,10 @@ export class Viewer {
         if (settings.useOverlay) {
         	this.overlay = new SvgOverlay(this.canvas, this.camera);
         }
+
+        this.camera.listeners.push(() => {
+            this.eventHandler.fire('camera_changed', this.camera.serialize());
+        })
         
         this.gl = this.canvas.getContext('webgl2', {stencil: true, premultipliedAlpha: false, preserveDrawingBuffer: true});
 
