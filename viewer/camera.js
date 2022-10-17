@@ -782,6 +782,16 @@ export class Camera {
         this._setDirty();
     }
 
+    serialize() {
+        const typedArrayToArray = Array.from
+    
+        return {
+            type: 'PERSPECTIVE',
+            eye: typedArrayToArray(this.eye),
+            target: typedArrayToArray(this.target),
+        };
+    }
+
     restore(params) {
         if (params.type) {
             this.projectionType = params.type;
