@@ -959,10 +959,10 @@ export class Viewer {
             	var triggered = false;
                 if (!params.shiftKey) {
                 	if (this.selectedElements.size > 0) {
+                        this.selectedElements.clear();
+                        this.addToSelection(uniqueId);
                 		this.eventHandler.fire("selection_state_set", viewObject.renderLayer, [uniqueId], true);
-                		triggered = true;
-                		this.selectedElements.clear();
-                		this.addToSelection(uniqueId);
+                		triggered = true;                		
                 	}
                 }
                 if (!triggered) {
@@ -982,10 +982,10 @@ export class Viewer {
         } else if (params.select !== false) {
         	if (this.selectedElements.size > 0) {
 				var map = this.splitElementsPerRenderLayer(this.selectedElements);
+                this.selectedElements.clear();
 				for (const [renderLayer, elems] of map) {
 	        		this.eventHandler.fire("selection_state_changed", renderLayer, elems, false);
 				}
-        		this.selectedElements.clear();
         	}
         }
 
