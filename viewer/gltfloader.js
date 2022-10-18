@@ -49,36 +49,33 @@ export class GLTFLoader {
         this.renderLayer = layer;
         this.params = params || {};
         this.features = params.features;
-        this.primarilyProcess();
+        this.initialize();
         this.debug = params.debug;
     }
 
-    primarilyProcess() {
-        var decoder = new TextDecoder("utf-8");
-
+    initialize() {
         // Parse header
-        var bufferFourBits = new Uint32Array(this.gltfBuffer.slice(0, 20));
-        if (bufferFourBits[0] != BINARY_EXTENSION_HEADER_MAGIC) {
+        let [magic, _, __, firstChunkLength, firstChunkType] = new Uint32Array(this.gltfBuffer).subarray(0,5);
+        if (magic != BINARY_EXTENSION_HEADER_MAGIC) {
             throw Error("Expected glTF");
         }
 
-        // Get JSON Chunk
-        var firstChunkLength = bufferFourBits[3];
-        var firstChunkType = bufferFourBits[4];
         if (firstChunkType !== BINARY_EXTENSION_CHUNK_TYPES.JSON) {
             throw Error("Expected JSON");
         }
+
         var content = this.gltfBuffer.slice(20, 20 + firstChunkLength);
-        var contentString = decoder.decode(content);
+        var contentString = (new TextDecoder("utf-8")).decode(content);
         this.json = JSON.parse(contentString);
 
         // Get Binary Chunk 
-        var secondChunkLength = new Uint32Array(this.gltfBuffer.slice(firstChunkLength + 20, firstChunkLength + 24))[0];
-        var secondChunkType = new Uint32Array(this.gltfBuffer.slice(firstChunkLength + 24, firstChunkLength + 28))[0];
+        let [secondChunkLength, secondChunkType] = new Uint32Array(this.gltfBuffer).subarray(firstChunkLength / Uint32Array.BYTES_PER_ELEMENT + 5, firstChunkLength / Uint32Array.BYTES_PER_ELEMENT + 24)
+
         if (secondChunkType !== BINARY_EXTENSION_CHUNK_TYPES.BIN) {
             throw Error("Expected BIN");
         }
-        this.secondChunkBits = this.gltfBuffer.slice(28 + firstChunkLength, 28 + firstChunkLength + secondChunkLength);
+
+        this.chunkOffset = 28 + firstChunkLength;
     }
 
     join(a, b) {
@@ -509,7 +506,7 @@ export class GLTFLoader {
 
         var accessorIndex = primitive.attributes[primitiveAttributeType];
         if (typeof(accessorIndex) === 'undefined') {
-            var accessorIndex = primitive[primitiveAttributeType]
+            accessorIndex = primitive[primitiveAttributeType]
         }
 
         if (typeof(accessorIndex) === 'undefined') {
@@ -540,15 +537,14 @@ export class GLTFLoader {
 
         // Borrowed from ThreeJS GLTFLoader.js
         var TypedArray = WEBGL_COMPONENT_TYPES[componentType];
-        var elementBytes = TypedArray.BYTES_PER_ELEMENT;
 
         // One acessor will have an accessor count number of, for example, VEC3.
         // A VEC3 is represented by 3 floats, 1 float being written on 4 bytes,
         // so the upperbound will be the the multiplication of these 3 variables. 
 
-        var upperBound = accessorCount * elementBytes * dataSize;
+        var upperBound = accessorCount * TypedArray.BYTES_PER_ELEMENT * dataSize;
 
-        if (byteStride && byteStride != (WEBGL_TYPE_SIZES[accesorType] * elementBytes)) {
+        if (byteStride && byteStride != (WEBGL_TYPE_SIZES[accesorType] * TypedArray.BYTES_PER_ELEMENT)) {
             let arrayBufferSubset = this.secondChunkBits.slice(byteOffset, byteOffset + byteLength);
             let all = new WEBGL_COMPONENT_TYPES[componentType](arrayBufferSubset);
             let strideSubset = new WEBGL_COMPONENT_TYPES[componentType](accessorCount * dataSize);
@@ -561,15 +557,13 @@ export class GLTFLoader {
             }
             return [accessor, strideSubset];
         } else {
-            if (byteOffset) {
-                var segmentedBuffer = this.secondChunkBits.slice(byteOffset, byteOffset + byteLength);
-            }
-            else {
-                var segmentedBuffer = this.secondChunkBits
+            if (!byteOffset) {
+                byteOffset = 0;
             }
 
-            var segmentedBufferFromAccessor = segmentedBuffer.slice(accessorOffset, accessorOffset + upperBound);
-            return [accessor, new WEBGL_COMPONENT_TYPES[componentType](segmentedBufferFromAccessor)];
+            return [accessor, new TypedArray(this.gltfBuffer).subarray(
+                (this.chunkOffset + byteOffset + accessorOffset) / TypedArray.BYTES_PER_ELEMENT,
+                (this.chunkOffset + byteOffset + accessorOffset + upperBound) / TypedArray.BYTES_PER_ELEMENT)];
         }
     }
 
